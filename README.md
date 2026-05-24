@@ -4,6 +4,8 @@ A minimal Expo app that shows the difference between a `TextField` whose value
 is mirrored into React `useState` on every keystroke and one that keeps its
 value on the native side via `useNativeState` from `@expo/ui/jetpack-compose`.
 
+> You can test this in Expo Go SDK 56
+
 Open [`src/app/index.tsx`](src/app/index.tsx) — two cards, side by side:
 
 - **Mirrored into useState** — `onValueChange` writes each keystroke into a
