@@ -17,8 +17,8 @@ Read the write-up for the full explanation:
 ## Run it
 
 ```bash
-npm install
-npm run android
+bun install
+bun start
 ```
 
 This example targets Android (`@expo/ui/jetpack-compose`).
