@@ -1,98 +1,113 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
-  return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
+import {
+  Button,
+  Card,
+  Column,
+  Text as ComposeText,
+  Host,
+  Row,
+  TextField,
+  useNativeState,
+} from "@expo/ui/jetpack-compose";
+import { fillMaxWidth, padding } from "@expo/ui/jetpack-compose/modifiers";
+import * as React from "react";
+import { View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function HomeScreen() {
+  // 1. Mirrored — every keystroke fires onValueChange, which calls a
+  //    useState setter and re-renders this component each character.
+  const controlledValue = useNativeState("");
+  const [jsMirror, setJsMirror] = React.useState("");
+  const jsRenders = React.useRef(0);
+  jsRenders.current += 1;
+
+  // 2. Native-only — the value stays in the native TextField.
+  //    No onValueChange, no React reconciliation while typing.
+  //    Read `.value` on demand when you actually need it in JS.
+  const nativeValue = useNativeState("");
+  const [lastRead, setLastRead] = React.useState<string | null>(null);
+
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
+    <View style={{ flex: 1 }}>
+      <SafeAreaView style={{ flex: 1 }}>
+        <Host style={{ flex: 1 }}>
+          <Column
+            modifiers={[padding(12, 12, 12, 12), fillMaxWidth()]}
+            verticalArrangement={{ spacedBy: 12 }}
+          >
+            {/* Controlled-style */}
+            <Card modifiers={[fillMaxWidth()]}>
+              <Column
+                modifiers={[padding(16, 12, 16, 12)]}
+                verticalArrangement={{ spacedBy: 8 }}
+              >
+                <ComposeText style={{ typography: "labelLarge" }}>
+                  Mirrored into useState
+                </ComposeText>
+                <TextField
+                  value={controlledValue}
+                  onValueChange={setJsMirror}
+                  modifiers={[fillMaxWidth()]}
+                >
+                  <TextField.Placeholder>
+                    <ComposeText>Type here…</ComposeText>
+                  </TextField.Placeholder>
+                </TextField>
+                <ComposeText style={{ typography: "bodySmall" }}>
+                  JS value: {JSON.stringify(jsMirror)}
+                </ComposeText>
+                <ComposeText style={{ typography: "bodySmall" }}>
+                  Component renders: {jsRenders.current}
+                </ComposeText>
+              </Column>
+            </Card>
 
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
+            {/* Native-only */}
+            <Card modifiers={[fillMaxWidth()]}>
+              <Column
+                modifiers={[padding(16, 12, 16, 12)]}
+                verticalArrangement={{ spacedBy: 8 }}
+              >
+                <ComposeText style={{ typography: "labelLarge" }}>
+                  useNativeState only
+                </ComposeText>
+                <TextField value={nativeValue} modifiers={[fillMaxWidth()]}>
+                  <TextField.Placeholder>
+                    <ComposeText>Type here…</ComposeText>
+                  </TextField.Placeholder>
+                </TextField>
+                <ComposeText style={{ typography: "bodySmall" }}>
+                  Last read:{" "}
+                  {lastRead === null ? "—" : JSON.stringify(lastRead)}
+                </ComposeText>
+                <Row horizontalArrangement={{ spacedBy: 8 }}>
+                  <Button onClick={() => setLastRead(nativeValue.value)}>
+                    <ComposeText>Read value</ComposeText>
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      nativeValue.value = "";
+                      setLastRead("");
+                    }}
+                  >
+                    <ComposeText>Clear</ComposeText>
+                  </Button>
+                </Row>
+              </Column>
+            </Card>
 
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        {Platform.OS === 'web' && <WebBadge />}
+            <ComposeText style={{ typography: "bodySmall" }}>
+              Top field re-renders this component on every keystroke. Bottom
+              field keeps state on the native side — JS only sees the value when
+              you tap “Read value”.
+            </ComposeText>
+          </Column>
+        </Host>
       </SafeAreaView>
-    </ThemedView>
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
-  },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
-  },
-  title: {
-    textAlign: 'center',
-  },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
-  },
-});
+HomeScreen.navigationOptions = {
+  title: "useNativeState",
+};
