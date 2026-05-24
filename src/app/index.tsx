@@ -14,16 +14,16 @@ import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function HomeScreen() {
-  // 1. Mirrored — every keystroke fires onValueChange, which calls a
-  //    useState setter and re-renders this component each character.
-  const controlledValue = useNativeState("");
-  const [jsMirror, setJsMirror] = React.useState("");
+  // 1. Plain useState — the field has no `value` prop, so it's uncontrolled.
+  //    onValueChange pushes each keystroke into useState, re-rendering this
+  //    component for every character.
+  const [jsValue, setJsValue] = React.useState("");
   const jsRenders = React.useRef(0);
   jsRenders.current += 1;
 
-  // 2. Native-only — the value stays in the native TextField.
-  //    No onValueChange, no React reconciliation while typing.
-  //    Read `.value` on demand when you actually need it in JS.
+  // 2. useNativeState — the value lives in the native TextField via an
+  //    ObservableState passed as `value`. No onValueChange, no React
+  //    reconciliation while typing. Read `.value` on demand when you need it.
   const nativeValue = useNativeState("");
   const [lastRead, setLastRead] = React.useState<string | null>(null);
 
@@ -42,11 +42,10 @@ export default function HomeScreen() {
                 verticalArrangement={{ spacedBy: 8 }}
               >
                 <ComposeText style={{ typography: "labelLarge" }}>
-                  Mirrored into useState
+                  Plain useState
                 </ComposeText>
                 <TextField
-                  value={controlledValue}
-                  onValueChange={setJsMirror}
+                  onValueChange={setJsValue}
                   modifiers={[fillMaxWidth()]}
                 >
                   <TextField.Placeholder>
@@ -54,7 +53,7 @@ export default function HomeScreen() {
                   </TextField.Placeholder>
                 </TextField>
                 <ComposeText style={{ typography: "bodySmall" }}>
-                  JS value: {JSON.stringify(jsMirror)}
+                  JS value: {JSON.stringify(jsValue)}
                 </ComposeText>
                 <ComposeText style={{ typography: "bodySmall" }}>
                   Component renders: {jsRenders.current}
